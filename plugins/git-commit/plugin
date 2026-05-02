@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hook="${1-}"
+
+case "$hook" in
+  prepare)
+    if [ "${ZERO_RELEASE_DRY_RUN:-false}" = "true" ]; then
+      exit 0
+    fi
+
+    assets=""
+    case ",${ZERO_RELEASE_PLUGINS:-}," in
+      *,changelog,*) assets="${assets} ${ZERO_RELEASE_CHANGELOG_FILE:-CHANGELOG.md}" ;;
+    esac
+    case ",${ZERO_RELEASE_PLUGINS:-}," in
+      *,package-json,*) assets="${assets} ${ZERO_RELEASE_PACKAGE_JSON:-package.json}" ;;
+    esac
+
+    for asset in $assets; do
+      if [ -f "$asset" ]; then
+        git add "$asset"
+      fi
+    done
+
+    if git diff --cached --quiet --exit-code; then
+      exit 0
+    fi
+
+    git commit -m "chore(release): ${ZERO_RELEASE_NEXT_TAG:-release} [skip ci]"
+    ;;
+  verify|analyze|verify-release|generate-notes|publish|notify|success|fail)
+    exit 0
+    ;;
+  *)
+    printf 'git-commit: unknown hook: %s\n' "$hook" >&2
+    exit 1
+    ;;
+esac

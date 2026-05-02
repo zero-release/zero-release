@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hook="${1-}"
+
+case "$hook" in
+  prepare)
+    if [ "${ZERO_RELEASE_DRY_RUN:-false}" = "true" ]; then
+      exit 0
+    fi
+
+    package_file="${ZERO_RELEASE_PACKAGE_JSON:-package.json}"
+    next_version="${ZERO_RELEASE_NEXT_VERSION:?ZERO_RELEASE_NEXT_VERSION is required}"
+
+    if [ ! -f "$package_file" ]; then
+      printf 'package-json: %s does not exist\n' "$package_file" >&2
+      exit 1
+    fi
+
+    temp_file="$(mktemp)"
+    awk -v version="$next_version" '
+      function rewrite_line(line,   i, c, j, k, d, value_escape) {
+        i = 1
+        while (i <= length(line)) {
+          c = substr(line, i, 1)
+
+          if (in_string) {
+            if (escape) {
+              escape = 0
+            } else if (c == "\\") {
+              escape = 1
+            } else if (c == "\"") {
+              in_string = 0
+            }
+            i++
+            continue
+          }
+
+          if (c == "\"") {
+            if (depth == 1 && substr(line, i, 9) == "\"version\"") {
+              j = i + 9
+              while (j <= length(line) && substr(line, j, 1) ~ /[[:space:]]/) {
+                j++
+              }
+              if (substr(line, j, 1) == ":") {
+                j++
+                while (j <= length(line) && substr(line, j, 1) ~ /[[:space:]]/) {
+                  j++
+                }
+                if (substr(line, j, 1) == "\"") {
+                  k = j + 1
+                  value_escape = 0
+                  while (k <= length(line)) {
+                    d = substr(line, k, 1)
+                    if (value_escape) {
+                      value_escape = 0
+                    } else if (d == "\\") {
+                      value_escape = 1
+                    } else if (d == "\"") {
+                      break
+                    }
+                    k++
+                  }
+                  if (k <= length(line)) {
+                    updated++
+                    if (updated > 1) {
+                      duplicate = 1
+                      return line
+                    }
+                    line = substr(line, 1, j) version substr(line, k)
+                    i = j + length(version) + 2
+                    continue
+                  }
+                }
+              }
+            }
+
+            in_string = 1
+            i++
+            continue
+          }
+
+          if (c == "{") {
+            depth++
+          } else if (c == "}") {
+            depth--
+          }
+          i++
+        }
+        return line
+      }
+
+      BEGIN {
+        updated = 0
+        duplicate = 0
+        depth = 0
+        in_string = 0
+        escape = 0
+      }
+      {
+        print rewrite_line($0)
+      }
+      END {
+        if (duplicate) {
+          exit 43
+        }
+        if (updated == 0) {
+          exit 42
+        }
+      }
+    ' "$package_file" > "$temp_file" || {
+      status="$?"
+      rm -f "$temp_file"
+      if [ "$status" = "42" ]; then
+        printf 'package-json: no top-level "version" field found in %s\n' "$package_file" >&2
+      elif [ "$status" = "43" ]; then
+        printf 'package-json: multiple top-level "version" fields found in %s\n' "$package_file" >&2
+      else
+        printf 'package-json: failed to update %s\n' "$package_file" >&2
+      fi
+      exit 1
+    }
+
+    mv "$temp_file" "$package_file"
+    ;;
+  verify)
+    if [ -n "${ZERO_RELEASE_PACKAGE_JSON:-}" ] && [ ! -f "${ZERO_RELEASE_PACKAGE_JSON:-}" ]; then
+      if [ "${ZERO_RELEASE_DRY_RUN:-false}" = "true" ]; then
+        exit 0
+      fi
+      printf 'package-json: %s does not exist\n' "$ZERO_RELEASE_PACKAGE_JSON" >&2
+      exit 1
+    fi
+    ;;
+  analyze|verify-release|generate-notes|publish|notify|success|fail)
+    exit 0
+    ;;
+  *)
+    printf 'package-json: unknown hook: %s\n' "$hook" >&2
+    exit 1
+    ;;
+esac

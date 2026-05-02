@@ -1,0 +1,104 @@
+name: zero-release
+description: Zero-runtime-dependency semantic release automation for GitHub Actions.
+
+inputs:
+  dry-run:
+    description: Run analysis and previews without creating commits, tags, pushes, or network notifications.
+    required: false
+    default: "false"
+  plugins:
+    description: Comma-separated plugin list.
+    required: false
+    default: "release-notes"
+  branches:
+    description: Comma-separated stable release branches.
+    required: false
+    default: "main,master"
+  prerelease-branches:
+    description: Comma-separated prerelease branches, optionally mapped as branch:channel.
+    required: false
+    default: ""
+  tag-format:
+    description: Tag format containing one %s placeholder.
+    required: false
+    default: "v%s"
+  changelog-file:
+    description: Changelog path for the changelog plugin.
+    required: false
+    default: "CHANGELOG.md"
+  package-json:
+    description: package.json path for the package-json plugin.
+    required: false
+    default: "package.json"
+  debug:
+    description: Enable debug logging.
+    required: false
+    default: "false"
+
+outputs:
+  released:
+    description: Whether a release was produced or would be produced.
+    value: ${{ steps.release.outputs.released }}
+  version:
+    description: Next version.
+    value: ${{ steps.release.outputs.version }}
+  tag:
+    description: Next tag.
+    value: ${{ steps.release.outputs.tag }}
+  bump:
+    description: Release bump.
+    value: ${{ steps.release.outputs.bump }}
+  previous-version:
+    description: Previous version.
+    value: ${{ steps.release.outputs.previous-version }}
+  previous-tag:
+    description: Previous tag.
+    value: ${{ steps.release.outputs.previous-tag }}
+  channel:
+    description: Release channel.
+    value: ${{ steps.release.outputs.channel }}
+
+runs:
+  using: composite
+  steps:
+    - id: release
+      shell: bash
+      env:
+        ZERO_RELEASE_ACTION_DRY_RUN: ${{ inputs.dry-run }}
+        ZERO_RELEASE_ACTION_PLUGINS: ${{ inputs.plugins }}
+        ZERO_RELEASE_ACTION_BRANCHES: ${{ inputs.branches }}
+        ZERO_RELEASE_ACTION_PRERELEASE_BRANCHES: ${{ inputs.prerelease-branches }}
+        ZERO_RELEASE_ACTION_TAG_FORMAT: ${{ inputs.tag-format }}
+        ZERO_RELEASE_ACTION_CHANGELOG_FILE: ${{ inputs.changelog-file }}
+        ZERO_RELEASE_ACTION_PACKAGE_JSON: ${{ inputs.package-json }}
+        ZERO_RELEASE_ACTION_DEBUG: ${{ inputs.debug }}
+      run: |
+        set -euo pipefail
+
+        args=()
+        if [ "$ZERO_RELEASE_ACTION_DRY_RUN" = "true" ]; then
+          args+=(--dry-run)
+        fi
+        if [ "$ZERO_RELEASE_ACTION_DEBUG" = "true" ]; then
+          args+=(--debug)
+        fi
+        if [ -n "$ZERO_RELEASE_ACTION_PLUGINS" ]; then
+          args+=(--plugins "$ZERO_RELEASE_ACTION_PLUGINS")
+        fi
+        if [ -n "$ZERO_RELEASE_ACTION_BRANCHES" ]; then
+          args+=(--branches "$ZERO_RELEASE_ACTION_BRANCHES")
+        fi
+        if [ -n "$ZERO_RELEASE_ACTION_PRERELEASE_BRANCHES" ]; then
+          args+=(--prerelease-branches "$ZERO_RELEASE_ACTION_PRERELEASE_BRANCHES")
+        fi
+        if [ -n "$ZERO_RELEASE_ACTION_TAG_FORMAT" ]; then
+          args+=(--tag-format "$ZERO_RELEASE_ACTION_TAG_FORMAT")
+        fi
+        if [ -n "$ZERO_RELEASE_ACTION_CHANGELOG_FILE" ]; then
+          args+=(--changelog-file "$ZERO_RELEASE_ACTION_CHANGELOG_FILE")
+        fi
+        if [ -n "$ZERO_RELEASE_ACTION_PACKAGE_JSON" ]; then
+          args+=(--package-json "$ZERO_RELEASE_ACTION_PACKAGE_JSON")
+        fi
+
+        "$GITHUB_ACTION_PATH/bin/zero-release" "${args[@]}"

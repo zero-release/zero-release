@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hook="${1-}"
+root="${ZERO_RELEASE_ROOT_DIR:?ZERO_RELEASE_ROOT_DIR is required}"
+
+. "$root/lib/json.sh"
+
+case "$hook" in
+  doctor)
+    if ! command -v curl >/dev/null 2>&1; then
+      printf 'slack: curl is required when the slack plugin is enabled\n' >&2
+      exit 1
+    fi
+    if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+      printf 'slack: SLACK_WEBHOOK_URL is not set\n' >&2
+      exit 1
+    fi
+    ;;
+  verify)
+    if [ "${ZERO_RELEASE_DRY_RUN:-false}" = "true" ]; then
+      exit 0
+    fi
+    if [ "${ZERO_RELEASE_RELEASED:-false}" != "true" ]; then
+      exit 0
+    fi
+    if ! command -v curl >/dev/null 2>&1; then
+      printf 'slack: curl is required when the slack plugin is enabled\n' >&2
+      exit 1
+    fi
+    if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+      printf 'slack: SLACK_WEBHOOK_URL is required when the slack plugin is enabled\n' >&2
+      exit 1
+    fi
+    ;;
+  notify)
+    if [ "${ZERO_RELEASE_DRY_RUN:-false}" = "true" ]; then
+      exit 0
+    fi
+    if [ "${ZERO_RELEASE_RELEASED:-false}" != "true" ]; then
+      exit 0
+    fi
+    payload="$(printf '{"text":"zero-release published %s on %s","release":{"version":%s,"tag":%s,"channel":%s,"compareUrl":%s}}' \
+      "$(zr_json_escape "${ZERO_RELEASE_NEXT_TAG:-}")" \
+      "$(zr_json_escape "${ZERO_RELEASE_CURRENT_BRANCH:-}")" \
+      "$(zr_json_string "${ZERO_RELEASE_NEXT_VERSION:-}")" \
+      "$(zr_json_string "${ZERO_RELEASE_NEXT_TAG:-}")" \
+      "$(zr_json_string "${ZERO_RELEASE_CHANNEL:-}")" \
+      "$(zr_json_string "${ZERO_RELEASE_COMPARE_URL:-}")")"
+    curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL" >/dev/null
+    ;;
+  analyze|verify-release|generate-notes|prepare|publish|success|fail)
+    exit 0
+    ;;
+  *)
+    printf 'slack: unknown hook: %s\n' "$hook" >&2
+    exit 1
+    ;;
+esac

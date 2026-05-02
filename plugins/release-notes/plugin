@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hook="${1-}"
+root="${ZERO_RELEASE_ROOT_DIR:?ZERO_RELEASE_ROOT_DIR is required}"
+
+. "$root/lib/url.sh"
+. "$root/lib/commits.sh"
+
+case "$hook" in
+  generate-notes)
+    : "${ZERO_RELEASE_NOTES_FILE:?ZERO_RELEASE_NOTES_FILE is required}"
+    zr_generate_release_notes_file \
+      "$ZERO_RELEASE_NOTES_FILE" \
+      "${ZERO_RELEASE_NEXT_VERSION:-}" \
+      "${ZERO_RELEASE_PREVIOUS_TAG:-}" \
+      "${ZERO_RELEASE_NEXT_TAG:-}" \
+      "${ZERO_RELEASE_REPOSITORY_URL:-}" \
+      "${ZERO_RELEASE_COMPARE_URL:-}"
+    ;;
+  verify|analyze|verify-release|prepare|publish|notify|success|fail)
+    exit 0
+    ;;
+  *)
+    printf 'release-notes: unknown hook: %s\n' "$hook" >&2
+    exit 1
+    ;;
+esac

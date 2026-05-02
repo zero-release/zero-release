@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hook="${1-}"
+
+case "$hook" in
+  prepare)
+    if [ "${ZERO_RELEASE_DRY_RUN:-false}" = "true" ]; then
+      exit 0
+    fi
+
+    changelog_file="${ZERO_RELEASE_CHANGELOG_FILE:-CHANGELOG.md}"
+    notes_file="${ZERO_RELEASE_NOTES_FILE:?ZERO_RELEASE_NOTES_FILE is required}"
+    temp_file="$(mktemp)"
+
+    if [ -f "$changelog_file" ]; then
+      awk -v notes_file="$notes_file" '
+        BEGIN {
+          while ((getline line < notes_file) > 0) {
+            notes = notes line "\n"
+          }
+          close(notes_file)
+        }
+        NR == 1 {
+          print
+          print ""
+          printf "%s", notes
+          next
+        }
+        { print }
+      ' "$changelog_file" > "$temp_file"
+    else
+      {
+        printf '# Changelog\n\n'
+        awk '{ print }' "$notes_file"
+      } > "$temp_file"
+    fi
+
+    mv "$temp_file" "$changelog_file"
+    ;;
+  verify|analyze|verify-release|generate-notes|publish|notify|success|fail)
+    exit 0
+    ;;
+  *)
+    printf 'changelog: unknown hook: %s\n' "$hook" >&2
+    exit 1
+    ;;
+esac
