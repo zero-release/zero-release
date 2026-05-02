@@ -1,4 +1,12 @@
-# zero-release
+<div align="center">
+
+# 0️⃣🚀 zero-release
+
+**Zero-runtime-dependency semantic release automation for GitHub Actions, written in Bash and based on Conventional Commits.**
+
+[![tests](https://github.com/teles/zero-release/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/teles/zero-release/actions/workflows/tests.yml) ![Bash](https://img.shields.io/badge/bash-CLI-4EAA25?logo=gnubash&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-composite%20action-2088FF?logo=githubactions&logoColor=white) ![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white) ![runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-zero-brightgreen) ![jq](https://img.shields.io/badge/jq-not%20required-lightgrey)
+
+</div>
 
 `zero-release` is a zero-runtime-dependency semantic release automation tool for GitHub Actions, written in Bash and based on Conventional Commits.
 
