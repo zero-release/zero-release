@@ -82,7 +82,46 @@ Configuration is only through CLI flags and environment variables. `.releaserc` 
 
 ## GitHub Actions
 
-Use `actions/checkout` with full history and tags:
+Use `actions/checkout` with full history and tags, and grant write access to repository contents so `zero-release` can create and push tags.
+
+### Using the published action
+
+```yaml
+name: release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: teles/zero-release@v1
+        id: release
+        with:
+          plugins: "release-notes,changelog,package-json"
+          branches: "main"
+```
+
+For a fully pinned version, use a specific tag:
+
+```yaml
+- uses: teles/zero-release@v1.0.0
+```
+
+### Using the action from the same repository
+
+When developing or testing `zero-release` itself, use the local action path:
 
 ```yaml
 - uses: actions/checkout@v4
@@ -95,6 +134,45 @@ Use `actions/checkout` with full history and tags:
     dry-run: "false"
     plugins: "release-notes,changelog,package-json"
     branches: "main"
+```
+
+### Pull requests
+
+In GitHub Actions, `pull_request` events default to dry-run. This means pull request workflows can analyze the release that would be produced without creating commits, tags, pushes, or network notifications.
+
+```yaml
+name: release-preview
+
+on:
+  pull_request:
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: teles/zero-release@v1
+        id: release
+        with:
+          plugins: "release-notes,changelog,package-json"
+          branches: "main"
+```
+
+### Prerelease branches
+
+Prereleases are opt-in. Configure prerelease branches explicitly:
+
+```yaml
+- uses: teles/zero-release@v1
+  id: release
+  with:
+    branches: "main"
+    prerelease-branches: "alpha,beta,rc,next:beta"
+    plugins: "release-notes,changelog,package-json"
 ```
 
 When `$GITHUB_OUTPUT` exists, the CLI writes these outputs directly:
