@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.1.1
+
+Released on 2026-05-03.
+
+### Bug Fixes
+
+- keep changelog commit links on one line ([595bbd9](https://github.com/teles/zero-release/commit/595bbd9031273423e37043ff22f7e9ceda27add4))
+
+[Compare changes](https://github.com/teles/zero-release/compare/v1.1.0...v1.1.1)
+
 ## v1.1.0
 
 Released on 2026-05-03.
