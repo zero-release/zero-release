@@ -82,3 +82,17 @@ setup_release_remote() {
   ! git rev-parse -q --verify refs/tags/v1.0.1 >/dev/null
   ! git --git-dir="$BARE_ORIGIN" rev-parse -q --verify refs/tags/v1.0.1 >/dev/null
 }
+
+@test "npm publish plugin runs during the publish phase" {
+  setup_release_remote
+  commit_file "fix: bug"
+  fake_bin="$BATS_TEST_TMPDIR/fake-npm-publish"
+  mkdir -p "$fake_bin"
+  printf '#!/usr/bin/env bash\nif [ "${1-}" = "--version" ]; then printf "11.5.1\\n"; exit 0; fi\nprintf "%%s\\n" "$*" > "%s/npm-publish-called"\n' "$BATS_TEST_TMPDIR" > "$fake_bin/npm"
+  chmod +x "$fake_bin/npm"
+
+  PATH="$fake_bin:$PATH" run "$ZERO_RELEASE_BIN" --plugins release-notes,npm --branches main
+  assert_success
+  git --git-dir="$BARE_ORIGIN" rev-parse -q --verify refs/tags/v1.0.1 >/dev/null
+  grep '^publish --tag latest$' "$BATS_TEST_TMPDIR/npm-publish-called" >/dev/null
+}
