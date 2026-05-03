@@ -1,7 +1,16 @@
 PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 ZERO_RELEASE_BIN="$PROJECT_ROOT/bin/zero-release"
 
+clear_github_actions_env() {
+  unset GITHUB_EVENT_NAME
+  unset GITHUB_HEAD_REPO_FORK
+  unset GITHUB_HEAD_REF
+  unset GITHUB_REF_NAME
+  unset GITHUB_OUTPUT
+}
+
 make_repo() {
+  clear_github_actions_env
   TEST_REPO="$(mktemp -d "${TMPDIR:-/tmp}/zero-release-test.XXXXXX")"
   cd "$TEST_REPO"
   git init -b main >/dev/null 2>&1 || {

@@ -89,7 +89,9 @@ setup_release_remote() {
   fake_bin="$BATS_TEST_TMPDIR/fake-npm-publish"
   mkdir -p "$fake_bin"
   printf '#!/usr/bin/env bash\nif [ "${1-}" = "--version" ]; then printf "11.5.1\\n"; exit 0; fi\nprintf "%%s\\n" "$*" > "%s/npm-publish-called"\n' "$BATS_TEST_TMPDIR" > "$fake_bin/npm"
+  printf '#!/usr/bin/env bash\nprintf "v24.0.0\\n"\n' > "$fake_bin/node"
   chmod +x "$fake_bin/npm"
+  chmod +x "$fake_bin/node"
 
   PATH="$fake_bin:$PATH" run "$ZERO_RELEASE_BIN" --plugins release-notes,npm --branches main
   assert_success
