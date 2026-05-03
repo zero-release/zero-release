@@ -75,7 +75,7 @@ Options:
   --no-push
   --no-tag
   --branches main,master
-  --plugins release-notes,changelog,package-json
+  --plugins release-notes,changelog,package-json,npm
   --tag-format "v%s"
   --changelog-file CHANGELOG.md
   --package-json package.json
@@ -164,6 +164,7 @@ zr_plugin_supports_hook() {
     changelog:prepare) return 0 ;;
     package-json:verify|package-json:prepare) return 0 ;;
     git-commit:prepare) return 0 ;;
+    npm:verify|npm:publish) return 0 ;;
     slack:verify|slack:notify) return 0 ;;
     webhook:verify|webhook:notify) return 0 ;;
     gchat:verify|gchat:notify) return 0 ;;
@@ -173,7 +174,7 @@ zr_plugin_supports_hook() {
 
 zr_plugin_is_network() {
   case "${1-}" in
-    slack|webhook|gchat) return 0 ;;
+    npm|slack|webhook|gchat) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -192,7 +193,7 @@ zr_plugin_enabled() {
 zr_hook_order() {
   case "$1" in
     verify)
-      printf '%s\n' release-notes changelog package-json git-commit webhook slack gchat
+      printf '%s\n' release-notes changelog package-json git-commit npm webhook slack gchat
       ;;
     generate-notes)
       printf '%s\n' release-notes
@@ -200,11 +201,14 @@ zr_hook_order() {
     prepare)
       printf '%s\n' changelog package-json git-commit
       ;;
+    publish)
+      printf '%s\n' npm
+      ;;
     notify)
       printf '%s\n' webhook slack gchat
       ;;
     *)
-      printf '%s\n' release-notes changelog package-json git-commit webhook slack gchat
+      printf '%s\n' release-notes changelog package-json git-commit npm webhook slack gchat
       ;;
   esac
 }
@@ -613,6 +617,7 @@ zr_publish_release() {
       git push origin "HEAD:${ZR_CURRENT_BRANCH}" || return $?
     fi
   fi
+  zr_run_hook "publish" || return $?
 }
 
 zr_notify_release() {
@@ -737,31 +742,33 @@ zr_doctor_json_check() {
 }
 
 zr_doctor_network_plugins() {
-  local plugin path output
+  local hook plugin path output
 
   ZR_DOCTOR_NETWORK_OK="true"
   ZR_DOCTOR_NETWORK_DETAIL=""
 
-  while IFS= read -r plugin; do
-    [ -n "$plugin" ] || continue
-    if ! zr_plugin_enabled "$plugin"; then
-      continue
-    fi
-    if ! zr_plugin_is_network "$plugin"; then
-      continue
-    fi
-
-    path="$ZERO_RELEASE_ROOT_DIR/plugins/$plugin/plugin"
-    if output="$("$path" doctor 2>&1)"; then
-      :
-    else
-      ZR_DOCTOR_NETWORK_OK="false"
-      if [ -n "$ZR_DOCTOR_NETWORK_DETAIL" ]; then
-        ZR_DOCTOR_NETWORK_DETAIL="${ZR_DOCTOR_NETWORK_DETAIL}; "
+  for hook in publish notify; do
+    while IFS= read -r plugin; do
+      [ -n "$plugin" ] || continue
+      if ! zr_plugin_enabled "$plugin"; then
+        continue
       fi
-      ZR_DOCTOR_NETWORK_DETAIL="${ZR_DOCTOR_NETWORK_DETAIL}${output}"
-    fi
-  done < <(zr_hook_order "notify")
+      if ! zr_plugin_is_network "$plugin"; then
+        continue
+      fi
+
+      path="$ZERO_RELEASE_ROOT_DIR/plugins/$plugin/plugin"
+      if output="$("$path" doctor 2>&1)"; then
+        :
+      else
+        ZR_DOCTOR_NETWORK_OK="false"
+        if [ -n "$ZR_DOCTOR_NETWORK_DETAIL" ]; then
+          ZR_DOCTOR_NETWORK_DETAIL="${ZR_DOCTOR_NETWORK_DETAIL}; "
+        fi
+        ZR_DOCTOR_NETWORK_DETAIL="${ZR_DOCTOR_NETWORK_DETAIL}${output}"
+      fi
+    done < <(zr_hook_order "$hook")
+  done
 
   if [ -z "$ZR_DOCTOR_NETWORK_DETAIL" ]; then
     ZR_DOCTOR_NETWORK_DETAIL="ok"

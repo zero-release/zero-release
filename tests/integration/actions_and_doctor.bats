@@ -90,6 +90,26 @@ load "../helpers/test_helper.bash"
   assert_output_contains "\"networkPluginRequirements\": { \"ok\": false"
 }
 
+@test "doctor reports missing npm for npm plugin" {
+  make_repo
+  commit_file "chore: initial"
+  git tag v1.0.0
+  fake_bin="$BATS_TEST_TMPDIR/minimal-bin-no-npm"
+  mkdir -p "$fake_bin"
+  for tool in bash git awk sed grep cut tr sort date mktemp dirname pwd; do
+    tool_path="$(command -v "$tool")"
+    if [ -n "$tool_path" ] && [ -f "$tool_path" ]; then
+      ln -s "$tool_path" "$fake_bin/$tool"
+    fi
+  done
+
+  PATH="$fake_bin" run "$ZERO_RELEASE_BIN" doctor --json --plugins npm --branches main
+  assert_success
+  assert_json_valid
+  assert_output_contains "\"networkPluginRequirements\": { \"ok\": false"
+  assert_output_contains "npm CLI is required"
+}
+
 @test "doctor does not perform release actions" {
   make_repo
   commit_file "chore: initial"

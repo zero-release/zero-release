@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hook="${1-}"
+
+zr_npm_version_at_least() {
+  local version="$1"
+  local minimum="$2"
+  local version_major version_minor version_patch
+  local minimum_major minimum_minor minimum_patch
+
+  version="${version#v}"
+  version="${version%%-*}"
+
+  if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    return 1
+  fi
+
+  IFS='.' read -r version_major version_minor version_patch <<EOF
+$version
+EOF
+  IFS='.' read -r minimum_major minimum_minor minimum_patch <<EOF
+$minimum
+EOF
+
+  if [ "$version_major" -gt "$minimum_major" ]; then
+    return 0
+  fi
+  if [ "$version_major" -lt "$minimum_major" ]; then
+    return 1
+  fi
+  if [ "$version_minor" -gt "$minimum_minor" ]; then
+    return 0
+  fi
+  if [ "$version_minor" -lt "$minimum_minor" ]; then
+    return 1
+  fi
+  [ "$version_patch" -ge "$minimum_patch" ]
+}
+
+zr_npm_dist_tag() {
+  if [ -n "${ZERO_RELEASE_NPM_TAG:-}" ]; then
+    printf '%s\n' "$ZERO_RELEASE_NPM_TAG"
+    return 0
+  fi
+
+  case "${ZERO_RELEASE_CHANNEL:-stable}" in
+    ""|stable) printf 'latest\n' ;;
+    *) printf '%s\n' "$ZERO_RELEASE_CHANNEL" ;;
+  esac
+}
+
+zr_npm_validate_dist_tag() {
+  local tag="$1"
+
+  [ -n "$tag" ] || return 1
+  case "$tag" in
+    -*|*' '*|*$'\n'*|*$'\t'*|*'/'*|*'@'*|*':'*)
+      return 1
+      ;;
+  esac
+  [[ "$tag" =~ ^[0-9A-Za-z._-]+$ ]]
+}
+
+zr_npm_validate_access() {
+  case "${1-}" in
+    ""|public|restricted) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+zr_npm_verify_publish() {
+  local dist_tag access npm_version node_version
+
+  if [ "${ZERO_RELEASE_DRY_RUN:-false}" = "true" ]; then
+    return 0
+  fi
+  if [ "${ZERO_RELEASE_RELEASED:-false}" != "true" ]; then
+    return 0
+  fi
+  if ! command -v npm >/dev/null 2>&1; then
+    printf 'npm: npm CLI is required when the npm plugin is enabled\n' >&2
+    return 1
+  fi
+  if ! command -v node >/dev/null 2>&1; then
+    printf 'npm: Node.js is required when the npm plugin is enabled\n' >&2
+    return 1
+  fi
+
+  npm_version="$(npm --version 2>/dev/null || true)"
+  if ! zr_npm_version_at_least "$npm_version" "11.5.1"; then
+    printf 'npm: npm CLI 11.5.1 or later is required for trusted publishing; found %s\n' "${npm_version:-unknown}" >&2
+    return 1
+  fi
+
+  node_version="$(node --version 2>/dev/null || true)"
+  if ! zr_npm_version_at_least "$node_version" "22.14.0"; then
+    printf 'npm: Node.js 22.14.0 or later is required for trusted publishing; found %s\n' "${node_version:-unknown}" >&2
+    return 1
+  fi
+
+  dist_tag="$(zr_npm_dist_tag)"
+  if ! zr_npm_validate_dist_tag "$dist_tag"; then
+    printf 'npm: invalid dist-tag: %s\n' "$dist_tag" >&2
+    return 1
+  fi
+
+  access="${ZERO_RELEASE_NPM_ACCESS:-}"
+  if ! zr_npm_validate_access "$access"; then
+    printf 'npm: ZERO_RELEASE_NPM_ACCESS must be public or restricted\n' >&2
+    return 1
+  fi
+}
+
+zr_npm_publish() {
+  local dist_tag access registry package_spec
+  local -a args
+
+  if [ "${ZERO_RELEASE_DRY_RUN:-false}" = "true" ]; then
+    return 0
+  fi
+  if [ "${ZERO_RELEASE_RELEASED:-false}" != "true" ]; then
+    return 0
+  fi
+
+  zr_npm_verify_publish || return $?
+
+  dist_tag="$(zr_npm_dist_tag)"
+  access="${ZERO_RELEASE_NPM_ACCESS:-}"
+  registry="${ZERO_RELEASE_NPM_REGISTRY:-}"
+  package_spec="${ZERO_RELEASE_NPM_PACKAGE:-}"
+
+  args=(publish --tag "$dist_tag")
+  if [ -n "$access" ]; then
+    args+=(--access "$access")
+  fi
+  if [ -n "$registry" ]; then
+    args+=(--registry "$registry")
+  fi
+  if [ -n "$package_spec" ]; then
+    args+=("$package_spec")
+  fi
+
+  printf 'npm: publishing with dist-tag %s\n' "$dist_tag"
+  npm "${args[@]}"
+}
+
+case "$hook" in
+  doctor)
+    ZERO_RELEASE_RELEASED="true" ZERO_RELEASE_DRY_RUN="false" zr_npm_verify_publish
+    ;;
+  verify)
+    zr_npm_verify_publish
+    ;;
+  publish)
+    zr_npm_publish
+    ;;
+  analyze|verify-release|generate-notes|prepare|notify|success|fail)
+    exit 0
+    ;;
+  *)
+    printf 'npm: unknown hook: %s\n' "$hook" >&2
+    exit 1
+    ;;
+esac
