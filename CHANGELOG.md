@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.2.0
+
+Released on 2026-05-17.
+
+### Features
+
+- add GitHub Release publishing plugin ([99ceab5](https://github.com/teles/zero-release/commit/99ceab50be2afadffe679bab6fe1c459e15ee8d5))
+
+### Other Changes
+
+- docs: add GitHub Pages documentation site ([054639f](https://github.com/teles/zero-release/commit/054639ff07bf0ab230b488bcd229fe80789abbec))
+
+[Compare changes](https://github.com/teles/zero-release/compare/v1.1.1...v1.2.0)
+
 ## v1.1.1
 
 Released on 2026-05-03.
