@@ -19,7 +19,7 @@ zero-release --plugins release-notes,changelog,package-json,github-release
 In GitHub Actions:
 
 ```yaml
-- uses: teles/zero-release@v1
+- uses: zero-release/zero-release@v1
   with:
     plugins: "release-notes,changelog,package-json,github-release"
     branches: "main"

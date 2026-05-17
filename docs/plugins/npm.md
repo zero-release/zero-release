@@ -50,7 +50,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - uses: teles/zero-release@v1
+      - uses: zero-release/zero-release@v1
         with:
           plugins: "release-notes,changelog,package-json,git-commit,npm,github-release"
           branches: "main"

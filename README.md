@@ -4,7 +4,7 @@
 
 **Zero-runtime-dependency semantic release automation for GitHub Actions, written in Bash and based on Conventional Commits.**
 
-[![tests](https://github.com/teles/zero-release/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/teles/zero-release/actions/workflows/tests.yml) ![Bash](https://img.shields.io/badge/bash-CLI-4EAA25?logo=gnubash&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-composite%20action-2088FF?logo=githubactions&logoColor=white) ![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white) ![runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-zero-brightgreen) ![jq](https://img.shields.io/badge/jq-not%20required-lightgrey)
+[![tests](https://github.com/zero-release/zero-release/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/zero-release/zero-release/actions/workflows/tests.yml) ![Bash](https://img.shields.io/badge/bash-CLI-4EAA25?logo=gnubash&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-composite%20action-2088FF?logo=githubactions&logoColor=white) ![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white) ![runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-zero-brightgreen) ![jq](https://img.shields.io/badge/jq-not%20required-lightgrey)
 
 </div>
 
@@ -108,7 +108,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: teles/zero-release@v1
+      - uses: zero-release/zero-release@v1
         id: release
         with:
           plugins: "release-notes,changelog,package-json,github-release"
@@ -118,7 +118,7 @@ jobs:
 For a fully pinned version, use a specific tag:
 
 ```yaml
-- uses: teles/zero-release@v1.0.0
+- uses: zero-release/zero-release@v1.0.0
 ```
 
 ### npm trusted publishing
@@ -159,7 +159,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - uses: teles/zero-release@v1
+      - uses: zero-release/zero-release@v1
         id: release
         with:
           plugins: "release-notes,changelog,package-json,git-commit,npm,github-release"
@@ -204,7 +204,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: teles/zero-release@v1
+      - uses: zero-release/zero-release@v1
         id: release
         with:
           plugins: "release-notes,changelog,package-json,github-release"
@@ -216,7 +216,7 @@ jobs:
 Prereleases are opt-in. Configure prerelease branches explicitly:
 
 ```yaml
-- uses: teles/zero-release@v1
+- uses: zero-release/zero-release@v1
   id: release
   with:
     branches: "main"

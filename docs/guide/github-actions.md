@@ -50,7 +50,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: teles/zero-release@v1
+      - uses: zero-release/zero-release@v1
         id: release
         with:
           plugins: "release-notes,changelog,package-json,github-release"
@@ -64,13 +64,13 @@ jobs:
 Use a major tag for normal usage:
 
 ```yaml
-- uses: teles/zero-release@v1
+- uses: zero-release/zero-release@v1
 ```
 
 Use a full version tag when you want stricter reproducibility:
 
 ```yaml
-- uses: teles/zero-release@v1.0.0
+- uses: zero-release/zero-release@v1.0.0
 ```
 
 ## Pull request previews
@@ -92,7 +92,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: teles/zero-release@v1
+      - uses: zero-release/zero-release@v1
         id: release
         with:
           plugins: "release-notes,changelog,package-json,github-release"
@@ -137,7 +137,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - uses: teles/zero-release@v1
+      - uses: zero-release/zero-release@v1
         id: release
         with:
           plugins: "release-notes,changelog,package-json,git-commit,npm,github-release"

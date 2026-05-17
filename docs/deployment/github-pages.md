@@ -43,7 +43,7 @@ Use these GitHub Pages settings:
 The project site will be published at:
 
 ```text
-https://teles.github.io/zero-release/
+https://zero-release.github.io/zero-release/
 ```
 
 ## Theme

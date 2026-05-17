@@ -18,7 +18,7 @@ zero-release --branches main --prerelease-branches alpha:alpha,next:beta
 In GitHub Actions:
 
 ```yaml
-- uses: teles/zero-release@v1
+- uses: zero-release/zero-release@v1
   id: release
   with:
     branches: "main"

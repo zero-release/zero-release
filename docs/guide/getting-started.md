@@ -57,7 +57,7 @@ Dry-run mode analyzes the release that would be produced without creating commit
 For most projects, start with:
 
 ```yaml
-- uses: teles/zero-release@v1
+- uses: zero-release/zero-release@v1
   id: release
   with:
     plugins: "release-notes,changelog,package-json,github-release"

@@ -1,7 +1,7 @@
 title: 0️⃣🚀 zero-release
 description: Zero-runtime-dependency semantic release automation for GitHub Actions, written in Bash.
 baseurl: "/zero-release"
-url: "https://teles.github.io"
+url: "https://zero-release.github.io"
 
 remote_theme: just-the-docs/just-the-docs
 plugins:
@@ -23,7 +23,7 @@ defaults:
 
 aux_links:
   GitHub:
-    - https://github.com/teles/zero-release
+    - https://github.com/zero-release/zero-release
 
 footer_content: "0️⃣🚀 zero-release · Zero-runtime-dependency semantic release automation."
 
