@@ -1,0 +1,22 @@
+<link rel="stylesheet" href="{{ '/assets/css/theme-toggle.css' | relative_url }}">
+<script>
+  (function () {
+    var storageKey = "zero-release-theme";
+    var theme = "light";
+
+    try {
+      var savedTheme = window.localStorage.getItem(storageKey);
+      var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      theme = savedTheme || (prefersDark ? "dark" : "light");
+    } catch (error) {
+      theme = "light";
+    }
+
+    document.documentElement.setAttribute("data-theme", theme);
+
+    if (window.jtd && typeof window.jtd.setTheme === "function") {
+      window.jtd.setTheme(theme);
+    }
+  }());
+</script>
+<script src="{{ '/assets/js/theme-toggle.js' | relative_url }}" defer></script>
