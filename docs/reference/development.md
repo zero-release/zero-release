@@ -26,7 +26,7 @@ bats tests/unit/*.bats tests/integration/*.bats
 
 Edit the Markdown files under `docs/`.
 
-GitHub Pages builds the site from the `/docs` folder with Jekyll and the Just the Docs remote theme.
+The `docs-site` workflow mirrors `docs/` into `zero-release/zero-release.github.io`, where GitHub Pages builds the root organization site with Jekyll and the Just the Docs remote theme.
 
 The repository stores:
 

@@ -1,6 +1,6 @@
 title: 0️⃣🚀 zero-release
 description: Zero-runtime-dependency semantic release automation for GitHub Actions, written in Bash.
-baseurl: "/zero-release"
+baseurl: ""
 url: "https://zero-release.github.io"
 
 remote_theme: just-the-docs/just-the-docs

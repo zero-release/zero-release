@@ -1,0 +1,100 @@
+name: docs-site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - docs/**
+      - .github/workflows/docs-site.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-site
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'zero-release/zero-release'
+    runs-on: ubuntu-latest
+    env:
+      TARGET_REPOSITORY: zero-release/zero-release.github.io
+      TARGET_URL: https://zero-release.github.io
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish documentation repository
+        env:
+          DOCS_PUBLISH_TOKEN: ${{ secrets.DOCS_PUBLISH_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${DOCS_PUBLISH_TOKEN:-}" ]; then
+            echo "::error title=Missing DOCS_PUBLISH_TOKEN::Create a fine-grained token with Contents read/write access to ${TARGET_REPOSITORY}, then save it as DOCS_PUBLISH_TOKEN in this repository."
+            exit 1
+          fi
+
+          mkdir -p payload
+          cp -R docs/. payload/
+
+          sed -i 's#^baseurl:.*#baseurl: ""#' payload/_config.yml
+          sed -i "s#^url:.*#url: \"${TARGET_URL}\"#" payload/_config.yml
+
+          cat > payload/README.md <<'README'
+          # 0️⃣🚀 zero-release documentation
+
+          This repository is generated from `zero-release/zero-release/docs`.
+
+          Do not edit files here directly. Open documentation changes against:
+
+          https://github.com/zero-release/zero-release/tree/main/docs
+
+          The sync workflow overwrites `main` with the source documentation.
+          README
+
+          mkdir -p payload/.github
+          cat > payload/.github/PULL_REQUEST_TEMPLATE.md <<'TEMPLATE'
+          This repository is generated from `zero-release/zero-release/docs`.
+
+          Please open documentation changes against:
+
+          https://github.com/zero-release/zero-release/tree/main/docs
+          TEMPLATE
+
+          cat > payload/.gitattributes <<'ATTRIBUTES'
+          * linguist-generated=true
+          README.md linguist-generated=false
+          .github/** linguist-generated=false
+          ATTRIBUTES
+
+          auth_header="$(printf 'x-access-token:%s' "$DOCS_PUBLISH_TOKEN" | base64 | tr -d '\n')"
+
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${auth_header}" \
+            clone "https://github.com/${TARGET_REPOSITORY}.git" site
+
+          git -C site checkout -B main
+          git -C site rm -r --ignore-unmatch .
+          cp -R payload/. site/
+
+          git -C site add -A
+
+          if git -C site diff --cached --quiet; then
+            echo "No documentation changes to publish."
+            exit 0
+          fi
+
+          git -C site config user.name "github-actions[bot]"
+          git -C site config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          short_sha="${GITHUB_SHA::7}"
+
+          git -C site commit \
+            -m "docs: sync from zero-release@${short_sha} [skip ci]" \
+            -m "Generated from zero-release/zero-release/docs at ${GITHUB_SHA}." \
+            -m "Do not edit this repository directly; update zero-release/zero-release/docs instead."
+
+          git -C site -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${auth_header}" \
+            push origin main
