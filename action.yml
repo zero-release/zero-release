@@ -1,5 +1,10 @@
 name: zero-release
+author: zero-release
 description: Zero-runtime-dependency semantic release automation for GitHub Actions.
+
+branding:
+  icon: tag
+  color: green
 
 inputs:
   dry-run:
